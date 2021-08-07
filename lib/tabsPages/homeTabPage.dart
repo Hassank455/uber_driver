@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uber_driver_app/AllScreens/registerationScreen.dart';
 import 'package:uber_driver_app/Assistants/assistantMethode.dart';
+import 'package:uber_driver_app/Notifications/pushNotificationService.dart';
 import 'package:uber_driver_app/configMaps.dart';
 import 'package:uber_driver_app/main.dart';
 
@@ -33,6 +35,12 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   bool isDriverAvailable = false;
 
+  @override
+  void initState() {
+    super.initState();
+    getCurrentDriverInfo();
+  }
+
   void locatePosition() async {
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
@@ -47,6 +55,14 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
     //String address = await AssistantMethod.searchCoordinateAddress(position, context);
     //print("This is your address :: " + address);
+  }
+
+  void getCurrentDriverInfo() async {
+    currentfirebaseUser = await FirebaseAuth.instance.currentUser;
+    PushNotificationService pushNotificationService = PushNotificationService();
+
+    pushNotificationService.initialize(context);
+    pushNotificationService.getToken();
   }
 
   @override
@@ -143,6 +159,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     Geofire.setLocation(currentfirebaseUser!.uid, currentPosition.latitude,
         currentPosition.longitude);
 
+    rideRequestRef!.set("searching");
     rideRequestRef!.onValue.listen((event) {});
   }
 
