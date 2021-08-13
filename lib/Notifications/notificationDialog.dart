@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:uber_driver_app/AllScreens/newRideScreen.dart';
 import 'package:uber_driver_app/AllScreens/registerationScreen.dart';
+import 'package:uber_driver_app/Assistants/assistantMethode.dart';
 import 'package:uber_driver_app/Models/rideDetails.dart';
 import 'package:uber_driver_app/configMaps.dart';
 import 'package:uber_driver_app/main.dart';
@@ -150,6 +151,7 @@ class NotificationDialog extends StatelessWidget {
 
       if (theRideId == rideDetails!.rider_request_id) {
         rideRequestRef!.set("accepted");
+        AssistantMethod.disableHomeTabLiveLocationUpdates();
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => NewRideScreen(rideDetails: rideDetails)));
       } else if (theRideId == 'cancelled') {
