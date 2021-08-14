@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:uber_driver_app/AllWidgets/CollectFareDialog.dart';
 import 'package:uber_driver_app/AllWidgets/progressDialog.dart';
 import 'package:uber_driver_app/Assistants/assistantMethode.dart';
 import 'package:uber_driver_app/Assistants/mapKitAssistant.dart';
@@ -177,7 +179,7 @@ class _NewRideScreenState extends State<NewRideScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Text('Muhammed Ali',
+                        Text(widget.rideDetails!.rider_name!,
                             style: TextStyle(
                                 fontSize: 24.0, fontFamily: "Brand Bold")),
                         Padding(
@@ -195,7 +197,7 @@ class _NewRideScreenState extends State<NewRideScreen> {
                         Expanded(
                           child: Container(
                             child: Text(
-                              'Street#44',
+                              widget.rideDetails!.pickup_address!,
                               style: TextStyle(fontSize: 18.0),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -212,7 +214,7 @@ class _NewRideScreenState extends State<NewRideScreen> {
                         Expanded(
                           child: Container(
                             child: Text(
-                              'Street#88',
+                              widget.rideDetails!.dropoff_address!,
                               style: TextStyle(fontSize: 18.0),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -426,6 +428,9 @@ class _NewRideScreenState extends State<NewRideScreen> {
       "longitude": currentPosition.longitude.toString(),
     };
     newRequestRef.child(rideRequestId).child("driver_location").set(locMap);
+
+    driversRef.child(currentfirebaseUser!.uid).child("history").child(rideRequestId).set(true);
+
   }
 
   void updateRideDetails() async {
@@ -479,8 +484,35 @@ class _NewRideScreenState extends State<NewRideScreen> {
     int fareAmount = AssistantMethod.calculateFares(directionDetails!);
 
     String rideRequestId = widget.rideDetails!.rider_request_id!;
-    newRequestRef.child(rideRequestId).child("fares").set(fareAmount.toString());
+    newRequestRef
+        .child(rideRequestId)
+        .child("fares")
+        .set(fareAmount.toString());
     newRequestRef.child(rideRequestId).child("status").set("ended");
     rideStreamSubscription!.cancel();
+
+    showDialog(
+        context: context,
+        builder: (context) => CollectFareDialog(
+              paymentMethod: widget.rideDetails!.payment_method,
+              fareAmount: fareAmount,
+            ));
+
+    saveEarning(fareAmount);
+
+  }
+
+  void saveEarning(int fareAmount){
+    driversRef.child(currentfirebaseUser!.uid).child("earnings").once().then((DataSnapshot dataSnapshot){
+      if(dataSnapshot.value != null){
+        double oldEarning = double.parse(dataSnapshot.value.toString());
+        double totalEarning = fareAmount + oldEarning;
+
+        driversRef.child(currentfirebaseUser!.uid).child("earnings").set(totalEarning.toStringAsFixed(2));
+      }else{
+        double totalEarning = fareAmount.toDouble();
+        driversRef.child(currentfirebaseUser!.uid).child("earnings").set(totalEarning.toStringAsFixed(2));
+      }
+    });
   }
 }
